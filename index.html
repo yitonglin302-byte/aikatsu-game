@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>偶像學園！RhythKatsu 網頁音樂遊戲</title>
+  <style>
+    *{
+       box-sizing: border-box;
+       user-select: none;
+       -webkit-user-select: none;
+       margin: 0;
+       padding: 0;
+       touch-action: manipulation;
+    }
+    body {
+       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+       background-color: #121214;
+       color: #ffffff;
+       overflow: hidden;
+       height: 100vh;
+       width: 100vw;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       justify-content: center;
+    }
+
+   /* 遊戲主容器 */
+   #game-container {
+     position: relative;
+     width: 100%;
+     max-width: 500px;
+     height: 100vh;
+     background: linear-gradient(180deg, #1f112b 0%, #0d0614 100%);
+
+
+
+
+
+
+
+
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
+  }
+
+  /* 選單介面 */
+  .screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: rgba(18, 12, 24, 0.95);
+    padding: 20px;
+    overflow-y: auto;
+    transition: opacity 0.3s ease;
+  }
+
+  .screen.hidden {
+    display: none !important;
+  }
+
+  h1 {
+    color: #ff69b4;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 24px;
+    text-shadow: 0 0 10px rgba(255, 105, 180, 0.6);
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #ffb6c1;
+    font-size: 13px;
+    margin-bottom: 15px;
+  }
+
+  /* 分類標籤 */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px 4px;
+    background: #2a1b36;
+    border: 1px solid #ff69b4;
+    color: #ffc0cb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .tab-btn.active {
+    background: #ff69b4;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+  }
+
+  /* 歌曲列表 */
+  .song-list {
+
+
+
+
+
+
+
+
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+  }
+
+  .song-card {
+    background: linear-gradient(135deg, #2d1838 0%, #1a0f24 100%);
+    border: 2px solid #e05297;
+    border-radius: 12px;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+
+  .song-card:active {
+    transform: scale(0.98);
+  }
+
+  .song-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .song-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  .song-meta {
+
+      font-size: 12px;
+      color: #ffb6c1;
+  }
+
+  .play-btn {
+    background: #ff69b4;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+  }
+
+  /* YouTube 影音區域 */
+  #video-viewport {
+    position: relative;
+    width: 100%;
+    height: 35%;
+    background: #000;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  #youtube-player {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* 遊戲頂部資訊 */
+  #hud {
+    position: absolute;
+    top: 10px;
+
+
+
+
+
+
+
+
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-family: monospace;
+      font-size: 14px;
+  }
+
+  .score-val {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  /* 音符下落區域 */
+  #play-field {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    background: rgba(10, 5, 18, 0.85);
+    overflow: hidden;
+    display: flex;
+  }
+
+  .track-lane {
+     flex: 1;
+     height: 100%;
+     border-right: 1px dashed rgba(255, 105, 180, 0.2);
+     position: relative;
+  }
+
+  .track-lane:last-child {
+     border-right: none;
+  }
+
+  /* 判定線 */
+  #judgment-line {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: #ffffff;
+    box-shadow: 0 0 12px #ff69b4, 0 0 20px #ff69b4;
+    z-index: 4;
+  }
+
+  /* 音符 (Notes) */
+  .note {
+    position: absolute;
+    width: 80%;
+    left: 10%;
+    height: 22px;
+    border-radius: 11px;
+    z-index: 3;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  }
+
+  .note.track-0 { background: linear-gradient(135deg, #ff4d4d, #cc0000); border: 2px solid #ff9999; }
+  .note.track-1 { background: linear-gradient(135deg, #2ecc71, #27ae60); border: 2px solid #a3e4d7; }
+  .note.track-2 { background: linear-gradient(135deg, #f1c40f, #f39c12); border: 2px solid #f9e79f; }
+
+  /* 判定反饋 */
+  #combo-display {
+    position: absolute;
+
+
+
+
+
+
+
+
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 5;
+      pointer-events: none;
+  }
+
+  .combo-count {
+    font-size: 38px;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 15px #ff69b4;
+  }
+
+  .combo-label {
+    font-size: 14px;
+    color: #ffb6c1;
+    letter-spacing: 2px;
+  }
+
+  .judgment-text {
+     font-size: 22px;
+     font-weight: bold;
+     text-shadow: 0 0 8px currentColor;
+     animation: pop 0.15s ease-out;
+  }
+
+  .judge-perfect { color: #00ffff; }
+  .judge-great { color: #55ff55; }
+  .judge-miss { color: #ff3366; }
+
+  @keyframes pop {
+   0% { transform: scale(0.6); opacity: 0.5; }
+   100% { transform: scale(1.1); opacity: 1; }
+
+  }
+
+  /* 手機觸控按鍵區 */
+  #controls {
+    height: 90px;
+    width: 100%;
+    background: #120b1a;
+    display: flex;
+    padding: 8px;
+    gap: 10px;
+    border-top: 2px solid #ff69b4;
+    flex-shrink: 0;
+  }
+
+  .pad-btn {
+    flex: 1;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+    cursor: pointer;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3);
+    transition: transform 0.05s, opacity 0.1s;
+  }
+
+  .pad-btn:active, .pad-btn.active {
+    transform: translateY(3px);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.3);
+    filter: brightness(1.3);
+  }
+
+
+
+
+
+
+
+
+  .pad-btn.red { background: linear-gradient(180deg, #ff5e5e 0%, #c0392b 100%); }
+  .pad-btn.green { background: linear-gradient(180deg, #2ecc71 0%, #1e8449 100%); }
+  .pad-btn.yellow { background: linear-gradient(180deg, #f39c12 0%, #d68910 100%); }
+
+  .key-hint {
+    font-size: 10px;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+
+  /* 結算畫面 */
+  .result-box {
+    background: rgba(30, 15, 45, 0.95);
+    border: 2px solid #ff69b4;
+    border-radius: 16px;
+    padding: 20px;
+    width: 90%;
+    max-width: 360px;
+    margin: auto;
+    text-align: center;
+  }
+
+  .result-title {
+    font-size: 22px;
+    color: #ff69b4;
+    margin-bottom: 15px;
+  }
+
+  .rank-badge {
+    font-size: 60px;
+    font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ffd700;
+    margin: 10px 0;
+
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 15px;
+    border-bottom: 1px dashed rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+  }
+
+  .btn-main {
+    background: linear-gradient(135deg, #ff69b4, #da70d6);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .nav-back {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 20;
+    background: rgba(255, 105, 180, 0.8);
+    border: none;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+
+
+
+
+
+
+
+
+     font-weight: bold;
+     cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+
+ <!-- 1. 歌曲選擇選單 -->
+ <div id="select-screen" class="screen">
+   <h1>偶像學園！RhythKatsu</h1>
+   <div class="subtitle">初代至明理世代 經典網頁音樂遊戲</div>
+
+   <div class="tabs">
+     <div class="tab-btn active" onclick="filterSongs('all', event)">全部曲目</div>
+     <div class="tab-btn" onclick="filterSongs('ichigo', event)">小莓世代</div>
+     <div class="tab-btn" onclick="filterSongs('constellation', event)">星座篇</div>
+     <div class="tab-btn" onclick="filterSongs('akari', event)">明理世代</div>
+   </div>
+
+   <div id="song-list" class="song-list"></div>
+ </div>
+
+ <!-- 2. 遊戲主畫面 -->
+ <div id="game-screen" class="screen hidden" style="padding:0; background:transparent;">
+   <button class="nav-back" onclick="quitGame()">選單</button>
+
+   <div id="video-viewport">
+     <div id="youtube-player"></div>
+     <div id="hud">
+       <div>分數: <span id="score" class="score-val">0</span></div>
+       <div>準確度: <span id="accuracy">100%</span></div>
+     </div>
+   </div>
+
+   <div id="play-field">
+     <div class="track-lane" id="lane-0"></div>
+     <div class="track-lane" id="lane-1"></div>
+     <div class="track-lane" id="lane-2"></div>
+     <div id="judgment-line"></div>
+
+     <div id="combo-display">
+       <div id="judgment-text" class="judgment-text"></div>
+       <div id="combo-count" class="combo-count"></div>
+       <div id="combo-label" class="combo-label"></div>
+     </div>
+   </div>
+
+   <div id="controls">
+     <button class="pad-btn red" id="btn-0" ontouchstart="handlePress(0, event)" onmousedown="handlePress(0, event)">
+       W
+       <span class="key-hint">紅 / 左</span>
+     </button>
+     <button class="pad-btn green" id="btn-1" ontouchstart="handlePress(1, event)" onmousedown="handlePress(1, event)">
+       A
+       <span class="key-hint">綠 / 中</span>
+     </button>
+     <button class="pad-btn yellow" id="btn-2" ontouchstart="handlePress(2, event)" onmousedown="handlePress(2, event)">
+       D
+       <span class="key-hint">黃 / 右</span>
+     </button>
+   </div>
+ </div>
+
+ <!-- 3. 結算畫面 -->
+ <div id="result-screen" class="screen hidden" style="justify-content: center;">
+   <div class="result-box">
+      <div class="result-title">演奏結束！</div>
+      <div id="res-rank" class="rank-badge">S</div>
+
+
+
+
+
+
+
+
+     <div class="stat-row"><span>最終得分</span><span id="res-score" style="color:#ffd700;font-weight:bold;">0</span></div>
+     <div class="stat-row"><span>最大連擊 (Combo)</span><span id="res-max-combo">0</span></div>
+     <div class="stat-row"><span>Perfect</span><span id="res-perfect" style="color:#00ffff;">0</span></div>
+     <div class="stat-row"><span>Great</span><span id="res-great" style="color:#55ff55;">0</span></div>
+     <div class="stat-row"><span>Miss</span><span id="res-miss" style="color:#ff3366;">0</span></div>
+     <button class="btn-main" onclick="showSelectScreen()">回到歌曲選單</button>
+   </div>
+ </div>
+
+</div>
+
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+  // 歌曲資料庫 (包含曲名、歌手、YouTube ID與節奏數據)
+  const songDatabase = [
+     {
+        id: "idol-katsudou",
+        title: "アイドル活動！(Idol Katsudou!)",
+        artist: "星宮莓、霧矢葵、紫吹蘭",
+        category: "ichigo",
+        youtubeId: "Y5U4M3a4p9I",
+        offset: 1.0,
+        bpm: 170
+     },
+     {
+        id: "calendar-girl",
+        title: "カレンダーガール (Calendar Girl)",
+        artist: "Soleil (星宮莓、葵、蘭)",
+        category: "ichigo",
+        youtubeId: "S3y3oK7N96k",
+        offset: 0.8,
+        bpm: 152
+     },
+
+      {
+           id: "kira-power",
+           title: "KIRA☆Power",
+           artist: "STAR☆ANIS (星座篇 OP1)",
+           category: "constellation",
+           youtubeId: "sD5_3c4pCjM",
+           offset: 1.2,
+           bpm: 180
+      },
+      {
+           id: "start-dash",
+           title: "START DASH SENSATION",
+           artist: "Luminas (大空明理、菫、雛姬)",
+           category: "akari",
+           youtubeId: "J8m6x839R4M",
+           offset: 1.0,
+           bpm: 175
+      }
+ ];
+
+ let player = null;
+ let currentSong = null;
+ let activeNotes = [];
+ let gameLoopId = null;
+ let isPlaying = false;
+
+ let score = 0;
+ let combo = 0;
+ let maxCombo = 0;
+ let countPerfect = 0;
+ let countGreat = 0;
+ let countMiss = 0;
+
+ const NOTE_SPEED = 450;
+ const HIT_LINE_Y = 0.85;
+
+
+
+
+
+
+
+
+ function onYouTubeIframeAPIReady() {}
+
+ window.onload = () => {
+    renderSongList('all');
+    setupKeyboardControls();
+ };
+
+ function filterSongs(cat, e) {
+   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+   if (e && e.target) e.target.classList.add('active');
+   renderSongList(cat);
+ }
+
+ function renderSongList(category) {
+   const listContainer = document.getElementById('song-list');
+   listContainer.innerHTML = '';
+
+     const filtered = category === 'all'
+       ? songDatabase
+       : songDatabase.filter(s => s.category === category);
+
+     filtered.forEach(song => {
+        const card = document.createElement('div');
+        card.className = 'song-card';
+        card.onclick = () => startGame(song);
+        card.innerHTML = `
+           <div class="song-info">
+             <div class="song-title">${song.title}</div>
+             <div class="song-meta">${song.artist} • BPM ${song.bpm}</div>
+           </div>
+           <button class="play-btn">開始</button>
+        `;
+        listContainer.appendChild(card);
+     });
+
+ }
+
+ function generateChart(song) {
+   const notes = [];
+   const beatInterval = 60 / song.bpm;
+   const totalDuration = 90;
+   let time = song.offset + 2.0;
+
+     let noteId = 0;
+     while (time < totalDuration) {
+       const lane = Math.floor(Math.random() * 3);
+       notes.push({
+          id: noteId++,
+          lane: lane,
+          time: time,
+          hit: false,
+          element: null
+       });
+
+      const rand = Math.random();
+      if (rand < 0.4) time += beatInterval;
+      else if (rand < 0.8) time += beatInterval * 0.5;
+      else time += beatInterval * 2;
+     }
+     return notes;
+ }
+
+ function startGame(song) {
+   currentSong = song;
+   score = 0; combo = 0; maxCombo = 0;
+   countPerfect = 0; countGreat = 0; countMiss = 0;
+
+     document.getElementById('score').innerText = '0';
+     document.getElementById('accuracy').innerText = '100%';
+     document.getElementById('combo-count').innerText = '';
+
+
+
+
+
+
+
+
+     document.getElementById('combo-label').innerText = '';
+     document.getElementById('judgment-text').innerText = '';
+
+     activeNotes = generateChart(song);
+
+     document.getElementById('select-screen').classList.add('hidden');
+     document.getElementById('result-screen').classList.add('hidden');
+     document.getElementById('game-screen').classList.remove('hidden');
+
+     document.querySelectorAll('.note').forEach(n => n.remove());
+
+     if (player) {
+        player.loadVideoById(song.youtubeId);
+     } else {
+        player = new YT.Player('youtube-player', {
+           videoId: song.youtubeId,
+           playerVars: {
+              'autoplay': 1,
+              'controls': 0,
+              'disablekb': 1,
+              'modestbranding': 1,
+              'rel': 0,
+              'playsinline': 1
+           },
+           events: {
+              'onReady': (e) => {
+                 e.target.playVideo();
+                 startLoop();
+              },
+              'onStateChange': onPlayerStateChange
+           }
+        });
+     }
+ }
+
+ function onPlayerStateChange(event) {
+   if (event.data === YT.PlayerState.PLAYING) {
+      isPlaying = true;
+      if (!gameLoopId) startLoop();
+   } else if (event.data === YT.PlayerState.ENDED) {
+      endGame();
+   } else {
+      isPlaying = false;
+   }
+ }
+
+ function startLoop() {
+   const playField = document.getElementById('play-field');
+   const fieldHeight = playField.clientHeight;
+   const hitTargetY = fieldHeight * HIT_LINE_Y;
+
+     function update() {
+       if (isPlaying && player && player.getCurrentTime) {
+          const currentTime = player.getCurrentTime();
+
+        activeNotes.forEach(note => {
+          if (note.hit) return;
+
+          const timeDiff = note.time - currentTime;
+          const yPos = hitTargetY - (timeDiff * NOTE_SPEED);
+
+          if (!note.element && yPos > -50 && yPos < fieldHeight + 50) {
+             const elem = document.createElement('div');
+             elem.className = `note track-${note.lane}`;
+             document.getElementById(`lane-${note.lane}`).appendChild(elem);
+             note.element = elem;
+          }
+
+          if (note.element) {
+             note.element.style.top = `${yPos}px`;
+
+
+
+
+
+
+
+
+             }
+
+              if (timeDiff < -0.22 && !note.hit) {
+                 note.hit = true;
+                 registerHit('MISS', note);
+              }
+           });
+         }
+         gameLoopId = requestAnimationFrame(update);
+     }
+     gameLoopId = requestAnimationFrame(update);
+ }
+
+ function handlePress(lane, e) {
+   if (e) e.preventDefault();
+
+     const btn = document.getElementById(`btn-${lane}`);
+     btn.classList.add('active');
+     setTimeout(() => btn.classList.remove('active'), 100);
+
+     if (!isPlaying || !player) return;
+
+     const currentTime = player.getCurrentTime();
+     const candidate = activeNotes.find(n => n.lane === lane && !n.hit && Math.abs(n.time - currentTime) < 0.25);
+
+     if (candidate) {
+        candidate.hit = true;
+        const diff = Math.abs(candidate.time - currentTime);
+
+         if (diff <= 0.08) registerHit('PERFECT', candidate);
+         else if (diff <= 0.18) registerHit('GREAT', candidate);
+         else registerHit('MISS', candidate);
+     }
+ }
+
+ function registerHit(type, note) {
+   if (note.element) {
+      note.element.remove();
+      note.element = null;
+   }
+
+     const judgeTextElem = document.getElementById('judgment-text');
+     const comboElem = document.getElementById('combo-count');
+     const comboLabelElem = document.getElementById('combo-label');
+
+     if (type === 'PERFECT') {
+        score += 1000 + (combo * 10);
+        combo++; countPerfect++;
+        judgeTextElem.className = 'judgment-text judge-perfect';
+        judgeTextElem.innerText = 'PERFECT!';
+     } else if (type === 'GREAT') {
+        score += 500 + (combo * 5);
+        combo++; countGreat++;
+        judgeTextElem.className = 'judgment-text judge-great';
+        judgeTextElem.innerText = 'GREAT';
+     } else {
+        combo = 0; countMiss++;
+        judgeTextElem.className = 'judgment-text judge-miss';
+        judgeTextElem.innerText = 'MISS';
+     }
+
+     if (combo > maxCombo) maxCombo = combo;
+
+     document.getElementById('score').innerText = score;
+     if (combo > 1) {
+        comboElem.innerText = combo;
+        comboLabelElem.innerText = 'COMBO';
+     } else {
+        comboElem.innerText = '';
+        comboLabelElem.innerText = '';
+
+
+
+
+
+
+
+
+     }
+
+     const processed = countPerfect + countGreat + countMiss;
+     if (processed > 0) {
+        const acc = (((countPerfect * 1.0) + (countGreat * 0.5)) / processed) * 100;
+        document.getElementById('accuracy').innerText = `${acc.toFixed(1)}%`;
+     }
+ }
+
+ function setupKeyboardControls() {
+   window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === '1' || key === 'arrowleft') handlePress(0);
+      if (key === 'a' || key === '2' || key === 'arrowdown') handlePress(1);
+      if (key === 'd' || key === '3' || key === 'arrowright') handlePress(2);
+   });
+ }
+
+ function quitGame() {
+   if (player && player.stopVideo) player.stopVideo();
+   if (gameLoopId) cancelAnimationFrame(gameLoopId);
+   isPlaying = false;
+   showSelectScreen();
+ }
+
+ function showSelectScreen() {
+   document.getElementById('game-screen').classList.add('hidden');
+   document.getElementById('result-screen').classList.add('hidden');
+   document.getElementById('select-screen').classList.remove('hidden');
+ }
+
+ function endGame() {
+   if (gameLoopId) cancelAnimationFrame(gameLoopId);
+   isPlaying = false;
+
+     document.getElementById('res-score').innerText = score;
+     document.getElementById('res-max-combo').innerText = maxCombo;
+     document.getElementById('res-perfect').innerText = countPerfect;
+     document.getElementById('res-great').innerText = countGreat;
+     document.getElementById('res-miss').innerText = countMiss;
+
+     let rank = 'C';
+     const totalProcessed = countPerfect + countGreat + countMiss;
+     const ratio = totalProcessed > 0 ? (countPerfect / totalProcessed) : 0;
+     if (ratio >= 0.85) rank = 'S';
+     else if (ratio >= 0.70) rank = 'A';
+     else if (ratio >= 0.50) rank = 'B';
+
+     document.getElementById('res-rank').innerText = rank;
+
+     document.getElementById('game-screen').classList.add('hidden');
+     document.getElementById('result-screen').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>
